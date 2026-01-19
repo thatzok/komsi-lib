@@ -1,4 +1,5 @@
-
+mod komsi;
+mod vehicle;
 
 #[cfg(test)]
 mod tests {
