@@ -36,27 +36,10 @@ pub enum KomsiCommandKind {
     SimulatorType = 79,
     /// Door enable status
     DoorEnable = 80,
-    /// Custom / Reserved command A17
-    A17 = 81,
-    /// Custom / Reserved command A18
-    A18 = 82,
-    /// Custom / Reserved command A19
-    A19 = 83,
-    /// Custom / Reserved command A20
-    A20 = 84,
-    /// Custom / Reserved command A21
-    A21 = 85,
-    /// Custom / Reserved command A22
-    A22 = 86,
-    /// Custom / Reserved command A23
-    A23 = 87,
-    /// Custom / Reserved command A24
-    A24 = 88,
-    /// Custom / Reserved command A25
-    A25 = 89,
-    /// Custom / Reserved command A26
-    A26 = 90,
-
+    /// total distance traveled
+    Odometer = 113,
+    /// actual Date and Time
+    DateTime = 114,
     /// Maximum speed value
     MaxSpeed = 115,
     /// Engine RPM value
@@ -73,6 +56,149 @@ pub enum KomsiCommandKind {
     Speed = 121,
     /// Water temperature value
     Water = 122,
+}
+
+#[derive(Debug)]
+pub enum KomsiError {
+    CommandReadError,
+    InvalidCommand(char),
+    InvalidValue,
+    InvalidDateTime,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct KomsiDateTime {
+    pub year: u16,
+    pub month: u8,
+    pub day: u8,
+    pub hour: u8,
+    pub min: u8,
+    pub sec: u8,
+}
+
+#[derive(Debug)]
+pub enum KomsiCommand {
+    Ignition(bool),           // A
+    Engine(bool),             // B
+    PassengerDoorsOpen(bool), // C
+    Indicator(u8),            // D
+    FixingBrake(bool),        // E
+    WarningLights(bool),      // F
+    MainLights(bool),         // G
+    FrontDoor(bool),          // H
+    SecondDoor(bool),         // I
+    ThirdDoor(bool),          // J
+    StopRequest(bool),        // K
+    StopBrake(bool),          // L
+    HighBeam(bool),           // M
+    BatteryLight(bool),       // N
+    SimulatorType(u8),        // O
+    DoorEnable(bool),         // P
+    Odometer(u64),            // o
+    DateTime(KomsiDateTime),  // r
+    MaxSpeed(u32),            // s
+    RPM(u32),                 // t
+    Pressure(u32),            // u
+    Temperature(u32),         // v
+    Oil(u32),                 // w
+    Fuel(u8),                 // x
+    Speed(u32),               // y
+    Water(u32),               // z
+}
+
+impl KomsiCommand {
+    pub fn from_parts(cmd_char: char, digits: &[u8]) -> Result<Self, KomsiError> {
+        // default value 0 if we did not receive a value
+        let value_u64 = if digits.is_empty() {
+            0
+        } else {
+            parse_u64(digits)?
+        };
+
+        match cmd_char {
+            'A' => Ok(KomsiCommand::Ignition(value_u64 != 0)),
+            'B' => Ok(KomsiCommand::Engine(value_u64 != 0)),
+            'C' => Ok(KomsiCommand::PassengerDoorsOpen(value_u64 != 0)),
+            'D' => Ok(KomsiCommand::Indicator(value_u64 as u8)),
+            'E' => Ok(KomsiCommand::FixingBrake(value_u64 != 0)),
+            'F' => Ok(KomsiCommand::WarningLights(value_u64 != 0)),
+            'G' => Ok(KomsiCommand::MainLights(value_u64 != 0)),
+            'H' => Ok(KomsiCommand::FrontDoor(value_u64 != 0)),
+            'I' => Ok(KomsiCommand::SecondDoor(value_u64 != 0)),
+            'J' => Ok(KomsiCommand::ThirdDoor(value_u64 != 0)),
+            'K' => Ok(KomsiCommand::StopRequest(value_u64 != 0)),
+            'L' => Ok(KomsiCommand::StopBrake(value_u64 != 0)),
+            'M' => Ok(KomsiCommand::HighBeam(value_u64 != 0)),
+            'N' => Ok(KomsiCommand::BatteryLight(value_u64 != 0)),
+            'O' => Ok(KomsiCommand::SimulatorType(value_u64 as u8)),
+            'P' => Ok(KomsiCommand::DoorEnable(value_u64 != 0)),
+            'o' => Ok(KomsiCommand::Odometer(value_u64)),
+            'r' => Ok(KomsiCommand::DateTime(parse_datetime(digits)?)),
+            's' => Ok(KomsiCommand::MaxSpeed(value_u64 as u32)),
+            't' => Ok(KomsiCommand::RPM(value_u64 as u32)),
+            'u' => Ok(KomsiCommand::Pressure(value_u64 as u32)),
+            'v' => Ok(KomsiCommand::Temperature(value_u64 as u32)),
+            'w' => Ok(KomsiCommand::Oil(value_u64 as u32)),
+            'x' => Ok(KomsiCommand::Fuel(value_u64 as u8)),
+            'y' => Ok(KomsiCommand::Speed(value_u64 as u32)),
+            'z' => Ok(KomsiCommand::Water(value_u64 as u32)),
+            _ => Err(KomsiError::InvalidCommand(cmd_char)),
+        }
+    }
+}
+
+// Helperfunctions for Parsing
+
+fn parse_u64(digits: &[u8]) -> Result<u64, KomsiError> {
+    let mut res: u64 = 0;
+    for &d in digits {
+        let digit = d.checked_sub(b'0').ok_or(KomsiError::InvalidValue)? as u64;
+        if digit > 9 {
+            return Err(KomsiError::InvalidValue);
+        }
+        res = res.saturating_mul(10).saturating_add(digit);
+    }
+    Ok(res)
+}
+
+fn parse_datetime(digits: &[u8]) -> Result<KomsiDateTime, KomsiError> {
+    if digits.len() != 14 {
+        return Err(KomsiError::InvalidDateTime);
+    }
+    Ok(KomsiDateTime {
+        year: parse_slice_u16(&digits[0..4])?,
+        month: parse_slice_u8(&digits[4..6])?,
+        day: parse_slice_u8(&digits[6..8])?,
+        hour: parse_slice_u8(&digits[8..10])?,
+        min: parse_slice_u8(&digits[10..12])?,
+        sec: parse_slice_u8(&digits[12..14])?,
+    })
+}
+
+fn parse_slice_u8(slice: &[u8]) -> Result<u8, KomsiError> {
+    let mut res: u8 = 0;
+    for &d in slice {
+        let digit = d.checked_sub(b'0').ok_or(KomsiError::InvalidValue)?;
+        res = res
+            .checked_mul(10)
+            .ok_or(KomsiError::InvalidValue)?
+            .checked_add(digit)
+            .ok_or(KomsiError::InvalidValue)?;
+    }
+    Ok(res)
+}
+
+fn parse_slice_u16(slice: &[u8]) -> Result<u16, KomsiError> {
+    let mut res: u16 = 0;
+    for &d in slice {
+        let digit = d.checked_sub(b'0').ok_or(KomsiError::InvalidValue)? as u16;
+        res = res
+            .checked_mul(10)
+            .ok_or(KomsiError::InvalidValue)?
+            .checked_add(digit)
+            .ok_or(KomsiError::InvalidValue)?;
+    }
+    Ok(res)
 }
 
 /// Builds a KOMSI command buffer from a command kind and a u32 value.
