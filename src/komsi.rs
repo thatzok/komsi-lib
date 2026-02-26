@@ -28,6 +28,52 @@ pub struct KomsiDateTime {
     pub sec: u8,
 }
 
+impl KomsiDateTime {
+    /// Parses a date time string in the format "YYYY-MM-DDTHH:MM:SS" into a KomsiDateTime.
+    pub fn from_iso(s: &str) -> Result<Self, KomsiError> {
+        if s.len() != 19 {
+            return Err(KomsiError::InvalidDateTime);
+        }
+        let b = s.as_bytes();
+        if b[4] != b'-' || b[7] != b'-' || b[10] != b'T' || b[13] != b':' || b[16] != b':' {
+            return Err(KomsiError::InvalidDateTime);
+        }
+
+        let p16 = |start: usize, end: usize| -> Result<u16, KomsiError> {
+            let mut n = 0u16;
+            for i in start..end {
+                let digit = b[i].checked_sub(b'0').ok_or(KomsiError::InvalidValue)?;
+                if digit > 9 {
+                    return Err(KomsiError::InvalidValue);
+                }
+                n = n.checked_mul(10).and_then(|n| n.checked_add(digit as u16)).ok_or(KomsiError::InvalidValue)?;
+            }
+            Ok(n)
+        };
+
+        let p8 = |start: usize, end: usize| -> Result<u8, KomsiError> {
+            let mut n = 0u8;
+            for i in start..end {
+                let digit = b[i].checked_sub(b'0').ok_or(KomsiError::InvalidValue)?;
+                if digit > 9 {
+                    return Err(KomsiError::InvalidValue);
+                }
+                n = n.checked_mul(10).and_then(|n| n.checked_add(digit)).ok_or(KomsiError::InvalidValue)?;
+            }
+            Ok(n)
+        };
+
+        Ok(KomsiDateTime {
+            year: p16(0, 4)?,
+            month: p8(5, 7)?,
+            day: p8(8, 10)?,
+            hour: p8(11, 13)?,
+            min: p8(14, 16)?,
+            sec: p8(17, 19)?,
+        })
+    }
+}
+
 // --- TRAITS FOR TYPE-SAFE CONVERSION ---
 
 /// Trait for deserializing a type from a raw value and digits.
@@ -387,5 +433,24 @@ mod tests {
     fn test_invalid_parse() {
         assert!(parse_u64(b"12a").is_err());
         assert!(parse_datetime(b"2024010112000").is_err()); // Too short
+    }
+
+    #[test]
+    fn test_from_iso() {
+        let s = "2026-01-01T09:43:48";
+        let dt = KomsiDateTime::from_iso(s).unwrap();
+        assert_eq!(dt.year, 2026);
+        assert_eq!(dt.month, 1);
+        assert_eq!(dt.day, 1);
+        assert_eq!(dt.hour, 9);
+        assert_eq!(dt.min, 43);
+        assert_eq!(dt.sec, 48);
+
+        // Teste ungültige Formate
+        assert!(KomsiDateTime::from_iso("2026-01-01 09:43:48").is_err()); // Fehlendes T
+        assert!(KomsiDateTime::from_iso("2026/01/01T09:43:48").is_err()); // Falscher Trenner
+        assert!(KomsiDateTime::from_iso("2026-01-01T09:43").is_err()); // Zu kurz
+        assert!(KomsiDateTime::from_iso("2026-01-01T09:43:48Z").is_err()); // Zu lang
+        assert!(KomsiDateTime::from_iso("202a-01-01T09:43:48").is_err()); // Keine Zahl
     }
 }
