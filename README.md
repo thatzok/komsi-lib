@@ -5,12 +5,13 @@
 [![Build](https://github.com/thatzok/komsi-lib/actions/workflows/build.yml/badge.svg)](https://github.com/thatzok/komsi-lib/actions/workflows/build.yml)
 ![maintenance-status](https://img.shields.io/badge/maintenance-actively--developed-brightgreen.svg)
 
-
-This Rust crate is a library for the KOMSI protocol, primarily used for vehicle telemetry (speed, lamps, etc.) in simulators (e.g., "The Bus", "OMSI 2") using the [KOMSI protocol](https://github.com/thatzok/Komsi-Protocol).
+This Rust crate is a library for the KOMSI protocol, primarily used for vehicle telemetry (speed, lamps, etc.) in
+simulators (e.g., "The Bus", "OMSI 2") using the [KOMSI protocol](https://github.com/thatzok/Komsi-Protocol).
 
 ## Features
 
-- **KOMSI Protocol Implementation:** Support for various [KOMSI protocol](https://github.com/thatzok/Komsi-Protocol) commands like Ignition, Engine, Speed, RPM, etc.
+- **KOMSI Protocol Implementation:** Support for various [KOMSI protocol](https://github.com/thatzok/Komsi-Protocol)
+  commands like Ignition, Engine, Speed, RPM, etc.
 - **Vehicle State Tracking:** Easily manage and track the state of a vehicle.
 
 ## Installation
@@ -43,13 +44,13 @@ impl VehicleLogger for MyLogger {
 fn main() {
     let old_state = VehicleState::new();
     let mut new_state = old_state.clone();
-    
+
     new_state.ignition = 1;
     new_state.speed = 50;
-    
+
     let logger = MyLogger;
     let commands = old_state.compare(&new_state, false, Some(&logger));
-    
+
     // 'commands' now contains the byte buffer to be sent via KOMSI
     println!("Generated {} bytes of commands", commands.len());
 }

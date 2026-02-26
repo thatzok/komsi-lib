@@ -1,7 +1,5 @@
-use crate::komsi::build_komsi_command;
 use crate::komsi::build_komsi_command_eol;
-use crate::komsi::build_komsi_command_u8;
-use crate::komsi::KomsiCommandKind;
+use crate::komsi::{build_komsi_command, KomsiCommand};
 
 /// Trait for logging state changes.
 pub trait VehicleLogger {
@@ -16,70 +14,83 @@ pub trait VehicleLogger {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct VehicleState {
     /// Ignition status (0 = Off, 1 = On)
-    pub ignition: u8,
+    pub ignition: bool,
     /// Engine status (0 = Off, 1 = On)
-    pub engine: u8,
+    pub engine: bool,
     /// Passenger doors status (0 = Closed, 1 = Open)
-    pub doors: u8,
+    pub doors: bool,
     /// Current speed
     pub speed: u32,
     /// Maximum speed
     pub maxspeed: u32,
     /// Fuel level
-    pub fuel: u32,
+    pub fuel: u8,
     /// Indicator status (0 = Off, 1 = Left, 2 = Right, 3 = Both)
     pub indicator: u8,
     /// Fixing brake / Parking brake status (0 = Released, 1 = Applied)
-    pub fixing_brake: u8,
+    pub fixing_brake: bool,
     /// Warning lights status (0 = Off, 1 = On)
-    pub lights_warning: u8,
+    pub lights_warning: bool,
     /// Main lights status (0 = Off, 1 = On)
-    pub lights_main: u8,
+    pub lights_main: bool,
     /// Front door lights status
-    pub lights_front_door: u8,
+    pub lights_front_door: bool,
     /// Second door lights status
-    pub lights_second_door: u8,
+    pub lights_second_door: bool,
     /// Third door lights status
-    pub lights_third_door: u8,
+    pub lights_third_door: bool,
     /// Fourth door lights status
-    pub lights_fourth_door: u8,
+    pub lights_fourth_door: bool,
     /// Stop request lights status
-    pub lights_stop_request: u8,
+    pub lights_stop_request: bool,
     /// Stop brake lights status
-    pub lights_stop_brake: u8,
+    pub lights_stop_brake: bool,
     /// High beam lights status
-    pub lights_high_beam: u8,
+    pub lights_high_beam: bool,
     /// Battery charging light status
-    pub battery_light: u8,
+    pub battery_light: bool,
     /// Gear selector position
     pub gear_selector: u8,
     /// Door enable status
-    pub door_enable: u8,
+    pub door_enable: bool,
+    /// Current date and time
+    pub datetime: crate::komsi::KomsiDateTime,
+    /// Total Distance in Meters
+    pub total_distance: u64,
 }
 
 impl Default for VehicleState {
     fn default() -> Self {
         Self {
-            ignition: 0,
-            engine: 0,
-            doors: 0,
+            ignition: false,
+            engine: false,
+            doors: false,
             speed: 0,
             indicator: 0,
-            fixing_brake: 0,
-            lights_warning: 0,
-            lights_main: 0,
-            lights_front_door: 0,
-            lights_second_door: 0,
-            lights_third_door: 0,
-            lights_fourth_door: 0,
-            lights_stop_request: 0,
+            fixing_brake: false,
+            lights_warning: false,
+            lights_main: false,
+            lights_front_door: false,
+            lights_second_door: false,
+            lights_third_door: false,
+            lights_fourth_door: false,
+            lights_stop_request: false,
             maxspeed: 0,
-            lights_high_beam: 0,
+            lights_high_beam: false,
             fuel: 0,
-            lights_stop_brake: 0,
-            battery_light: 0,
-            door_enable: 0,
-            gear_selector:0,
+            lights_stop_brake: false,
+            battery_light: false,
+            door_enable: false,
+            gear_selector: 0,
+            datetime: crate::komsi::KomsiDateTime {
+                year: 2000,
+                month: 1,
+                day: 1,
+                hour: 0,
+                min: 0,
+                sec: 0,
+            },
+            total_distance: 0,
         }
     }
 }
@@ -112,6 +123,7 @@ impl VehicleState {
         print!("battery-light:{} ", self.battery_light);
         print!("door-enable:{} ", self.door_enable);
         print!("gear-selector:{} ", self.gear_selector);
+        print!("datetime:{:?} ", self.datetime);
         println!(" ");
     }
 
@@ -127,235 +139,216 @@ impl VehicleState {
     ) -> Vec<u8> {
         let mut buffer: Vec<u8> = vec![0; 0];
 
-        self.handle_u8_field_change(
-            self.ignition,
-            new.ignition,
-            "ignition",
-            KomsiCommandKind::Ignition,
-            logger,
-            force,
-            &mut buffer,
-        );
+        if self.ignition != new.ignition || force {
+            if let Some(l) = logger {
+                l.log(format!(
+                    "{}: {} -> {} ",
+                    "ignition", self.ignition as u8, new.ignition as u8
+                ));
+            }
+            let cmd = KomsiCommand::Ignition(new.ignition);
+            buffer.extend_from_slice(&build_komsi_command(cmd));
+        }
 
-        self.handle_u8_field_change(
-            self.engine,
-            new.engine,
-            "engine",
-            KomsiCommandKind::Engine,
-            logger,
-            force,
-            &mut buffer,
-        );
+        if self.engine != new.engine || force {
+            if let Some(l) = logger {
+                l.log(format!(
+                    "{}: {} -> {} ",
+                    "engine", self.engine as u8, new.engine as u8
+                ));
+            }
+            let cmd = KomsiCommand::Engine(new.engine);
+            buffer.extend_from_slice(&build_komsi_command(cmd));
+        }
 
-        self.handle_u8_field_change(
-            self.doors,
-            new.doors,
-            "doors",
-            KomsiCommandKind::PassengerDoorsOpen,
-            logger,
-            force,
-            &mut buffer,
-        );
+        if self.doors != new.doors || force {
+            if let Some(l) = logger {
+                l.log(format!(
+                    "{}: {} -> {} ",
+                    "doors", self.doors as u8, new.doors as u8
+                ));
+            }
+            let cmd = KomsiCommand::PassengerDoorsOpen(new.doors);
+            buffer.extend_from_slice(&build_komsi_command(cmd));
+        }
 
-        self.handle_u8_field_change(
-            self.fixing_brake,
-            new.fixing_brake,
-            "fixing_brake",
-            KomsiCommandKind::FixingBrake,
-            logger,
-            force,
-            &mut buffer,
-        );
+        if self.fixing_brake != new.fixing_brake || force {
+            if let Some(l) = logger {
+                l.log(format!(
+                    "{}: {} -> {} ",
+                    "fixing_brake", self.fixing_brake as u8, new.fixing_brake as u8
+                ));
+            }
+            let cmd = KomsiCommand::FixingBrake(new.fixing_brake);
+            buffer.extend_from_slice(&build_komsi_command(cmd));
+        }
 
-        self.handle_u8_field_change(
-            self.indicator,
-            new.indicator,
-            "indicator",
-            KomsiCommandKind::Indicator,
-            logger,
-            force,
-            &mut buffer,
-        );
+        if self.indicator != new.indicator || force {
+            if let Some(l) = logger {
+                l.log(format!(
+                    "{}: {} -> {} ",
+                    "indicator", self.indicator, new.indicator
+                ));
+            }
+            let cmd = KomsiCommand::Indicator(new.indicator);
+            buffer.extend_from_slice(&build_komsi_command(cmd));
+        }
 
-        self.handle_u8_field_change(
-            self.lights_warning,
-            new.lights_warning,
-            "lights_warning",
-            KomsiCommandKind::LightsWarning,
-            logger,
-            force,
-            &mut buffer,
-        );
+        if self.lights_warning != new.lights_warning || force {
+            if let Some(l) = logger {
+                l.log(format!(
+                    "{}: {} -> {} ",
+                    "lights_warning", self.lights_warning as u8, new.lights_warning as u8
+                ));
+            }
+            let cmd = KomsiCommand::WarningLights(new.lights_warning);
+            buffer.extend_from_slice(&build_komsi_command(cmd));
+        }
 
-        self.handle_u8_field_change(
-            self.lights_main,
-            new.lights_main,
-            "lights_main",
-            KomsiCommandKind::LightsMain,
-            logger,
-            force,
-            &mut buffer,
-        );
+        if self.lights_main != new.lights_main || force {
+            if let Some(l) = logger {
+                l.log(format!(
+                    "{}: {} -> {} ",
+                    "lights_main", self.lights_main as u8, new.lights_main as u8
+                ));
+            }
+            let cmd = KomsiCommand::MainLights(new.lights_main);
+            buffer.extend_from_slice(&build_komsi_command(cmd));
+        }
 
-        self.handle_u8_field_change(
-            self.lights_stop_request,
-            new.lights_stop_request,
-            "lights_stop_request",
-            KomsiCommandKind::LightsStopRequest,
-            logger,
-            force,
-            &mut buffer,
-        );
+        if self.lights_stop_request != new.lights_stop_request || force {
+            if let Some(l) = logger {
+                l.log(format!(
+                    "{}: {} -> {} ",
+                    "lights_stop_request",
+                    self.lights_stop_request as u8,
+                    new.lights_stop_request as u8
+                ));
+            }
+            let cmd = KomsiCommand::StopRequest(new.lights_stop_request);
+            buffer.extend_from_slice(&build_komsi_command(cmd));
+        }
 
-        self.handle_u8_field_change(
-            self.lights_stop_brake,
-            new.lights_stop_brake,
-            "lights_stop_brake",
-            KomsiCommandKind::LightsStopBrake,
-            logger,
-            force,
-            &mut buffer,
-        );
+        if self.lights_stop_brake != new.lights_stop_brake || force {
+            if let Some(l) = logger {
+                l.log(format!(
+                    "{}: {} -> {} ",
+                    "lights_stop_brake", self.lights_stop_brake as u8, new.lights_stop_brake as u8
+                ));
+            }
+            let cmd = KomsiCommand::StopBrake(new.lights_stop_brake);
+            buffer.extend_from_slice(&build_komsi_command(cmd));
+        }
 
-        self.handle_u8_field_change(
-            self.lights_front_door,
-            new.lights_front_door,
-            "lights_front_door",
-            KomsiCommandKind::LightsFrontDoor,
-            logger,
-            force,
-            &mut buffer,
-        );
+        if self.lights_front_door != new.lights_front_door || force {
+            if let Some(l) = logger {
+                l.log(format!(
+                    "{}: {} -> {} ",
+                    "lights_front_door", self.lights_front_door as u8, new.lights_front_door as u8
+                ));
+            }
+            let cmd = KomsiCommand::FrontDoor(new.lights_front_door);
+            buffer.extend_from_slice(&build_komsi_command(cmd));
+        }
 
-        self.handle_u8_field_change(
-            self.lights_second_door,
-            new.lights_second_door,
-            "lights_second_door",
-            KomsiCommandKind::LightsSecondDoor,
-            logger,
-            force,
-            &mut buffer,
-        );
+        if self.lights_second_door != new.lights_second_door || force {
+            if let Some(l) = logger {
+                l.log(format!(
+                    "{}: {} -> {} ",
+                    "lights_second_door",
+                    self.lights_second_door as u8,
+                    new.lights_second_door as u8
+                ));
+            }
+            let cmd = KomsiCommand::SecondDoor(new.lights_second_door);
+            buffer.extend_from_slice(&build_komsi_command(cmd));
+        }
 
-        self.handle_u8_field_change(
-            self.lights_third_door,
-            new.lights_third_door,
-            "lights_third_door",
-            KomsiCommandKind::LightsThirdDoor,
-            logger,
-            force,
-            &mut buffer,
-        );
+        if self.lights_third_door != new.lights_third_door || force {
+            if let Some(l) = logger {
+                l.log(format!(
+                    "{}: {} -> {} ",
+                    "lights_third_door", self.lights_third_door as u8, new.lights_third_door as u8
+                ));
+            }
+            let cmd = KomsiCommand::ThirdDoor(new.lights_third_door);
+            buffer.extend_from_slice(&build_komsi_command(cmd));
+        }
 
-        self.handle_u8_field_change(
-            self.lights_high_beam,
-            new.lights_high_beam,
-            "lights_high_beam",
-            KomsiCommandKind::LightsHighBeam,
-            logger,
-            force,
-            &mut buffer,
-        );
+        if self.lights_high_beam != new.lights_high_beam || force {
+            if let Some(l) = logger {
+                l.log(format!(
+                    "{}: {} -> {} ",
+                    "lights_high_beam", self.lights_high_beam as u8, new.lights_high_beam as u8
+                ));
+            }
+            let cmd = KomsiCommand::HighBeam(new.lights_high_beam);
+            buffer.extend_from_slice(&build_komsi_command(cmd));
+        }
 
-        self.handle_u32_field_change(
-            self.fuel,
-            new.fuel,
-            "fuel",
-            KomsiCommandKind::Fuel,
-            logger,
-            force,
-            &mut buffer,
-        );
+        if self.fuel != new.fuel || force {
+            if let Some(l) = logger {
+                l.log(format!("{}: {} -> {} ", "fuel", self.fuel, new.fuel));
+            }
+            let cmd = KomsiCommand::Fuel(new.fuel);
+            buffer.extend_from_slice(&build_komsi_command(cmd));
+        }
 
-        self.handle_u32_field_change(
-            self.speed,
-            new.speed,
-            "speed",
-            KomsiCommandKind::Speed,
-            logger,
-            force,
-            &mut buffer,
-        );
+        if self.speed != new.speed || force {
+            if let Some(l) = logger {
+                l.log(format!("{}: {} -> {} ", "speed", self.speed, new.speed));
+            }
+            let cmd = KomsiCommand::Speed(new.speed);
+            buffer.extend_from_slice(&build_komsi_command(cmd));
+        }
 
-        self.handle_u32_field_change(
-            self.maxspeed,
-            new.maxspeed,
-            "maxspeed",
-            KomsiCommandKind::MaxSpeed,
-            logger,
-            force,
-            &mut buffer,
-        );
+        if self.maxspeed != new.maxspeed || force {
+            if let Some(l) = logger {
+                l.log(format!(
+                    "{}: {} -> {} ",
+                    "maxspeed", self.maxspeed, new.maxspeed
+                ));
+            }
+            let cmd = KomsiCommand::MaxSpeed(new.maxspeed);
+            buffer.extend_from_slice(&build_komsi_command(cmd));
+        }
 
-        self.handle_u8_field_change(
-            self.battery_light,
-            new.battery_light,
-            "battery_light",
-            KomsiCommandKind::BatteryLight,
-            logger,
-            force,
-            &mut buffer,
-        );
+        if self.battery_light != new.battery_light || force {
+            if let Some(l) = logger {
+                l.log(format!(
+                    "{}: {} -> {} ",
+                    "battery_light", self.battery_light as u8, new.battery_light as u8
+                ));
+            }
+            let cmd = KomsiCommand::BatteryLight(new.battery_light);
+            buffer.extend_from_slice(&build_komsi_command(cmd));
+        }
 
-        self.handle_u8_field_change(
-            self.door_enable,
-            new.door_enable,
-            "door_enable",
-            KomsiCommandKind::DoorEnable,
-            logger,
-            force,
-            &mut buffer,
-        );
+        if self.door_enable != new.door_enable || force {
+            if let Some(l) = logger {
+                l.log(format!(
+                    "{}: {} -> {} ",
+                    "door_enable", self.door_enable as u8, new.door_enable as u8
+                ));
+            }
+            let cmd = KomsiCommand::DoorEnable(new.door_enable);
+            buffer.extend_from_slice(&build_komsi_command(cmd));
+        }
+
+        // IMPORTANT
+        // we do not compare total_distance and DateTime
+        // not even with force
+        // these values will only be read-manually and after a vehicle restart/change
 
         // TODO GearSelector, door4 if this will become a KOMSI-protocol entry sometime
 
-        // zeilenende hinzu, wenn buffer nicht leer
+        // add end of line if buffer is not empty
         if buffer.len() > 0 {
             let mut b = build_komsi_command_eol();
             buffer.append(&mut b);
         }
 
         buffer
-    }
-
-    /// Helper function for handling u8 field changes.
-    fn handle_u8_field_change(
-        &self,
-        old_value: u8,
-        new_value: u8,
-        field_name: &str,
-        command_kind: KomsiCommandKind,
-        logger: Option<&dyn VehicleLogger>,
-        force: bool,
-        buffer: &mut Vec<u8>,
-    ) {
-        if (old_value != new_value) || force {
-            if let Some(l) = logger {
-                l.log(format!("{}: {} -> {} ", field_name, old_value, new_value));
-            }
-            let mut b = build_komsi_command_u8(command_kind, new_value);
-            buffer.append(&mut b);
-        }
-    }
-
-    /// Helper function for handling u32 field changes.
-    fn handle_u32_field_change(
-        &self,
-        old_value: u32,
-        new_value: u32,
-        field_name: &str,
-        command_kind: KomsiCommandKind,
-        logger: Option<&dyn VehicleLogger>,
-        force: bool,
-        buffer: &mut Vec<u8>,
-    ) {
-        if (old_value != new_value) || force {
-            if let Some(l) = logger {
-                l.log(format!("{}:  {} -> {} ", field_name, old_value, new_value));
-            }
-            let mut b = build_komsi_command(command_kind, new_value);
-            buffer.append(&mut b);
-        }
     }
 }
 
@@ -377,7 +370,7 @@ mod tests {
     #[test]
     fn test_vehicle_state_new() {
         let state = VehicleState::new();
-        assert_eq!(state.ignition, 0);
+        assert_eq!(state.ignition, false);
         assert_eq!(state.speed, 0);
     }
 
@@ -393,11 +386,10 @@ mod tests {
     fn test_compare_with_changes() {
         let old = VehicleState::new();
         let mut new = VehicleState::new();
-        new.ignition = 1;
+        new.ignition = true;
         new.speed = 50;
-        
+
         let buffer = old.compare(&new, false, None);
-        // Ignition(65) + '1' (49) + Speed(121) + '50' (53, 48) + EOL(10)
         let expected = vec![65, 49, 121, 53, 48, 10];
         assert_eq!(buffer, expected);
     }
@@ -407,26 +399,83 @@ mod tests {
         let old = VehicleState::new();
         let new = VehicleState::new();
         let buffer = old.compare(&new, true, None);
-        // When force is true, all fields (except maybe door4 which is TODO) are added.
-        // It should definitely not be empty.
         assert!(!buffer.is_empty());
         assert_eq!(buffer.last(), Some(&10)); // Should end with EOL
     }
 
     #[test]
-    fn test_compare_with_logger() {
-        let old = VehicleState::new();
+    fn test_multi_value_line_roundtrip() {
         let mut new = VehicleState::new();
-        new.ignition = 1;
-        
+        new.ignition = true;
+        new.speed = 85;
+        new.fuel = 42;
+
+        let mut buffer: Vec<u8> = Vec::new();
+        buffer.extend_from_slice(&build_komsi_command(KomsiCommand::Ignition(new.ignition)));
+        buffer.extend_from_slice(&build_komsi_command(KomsiCommand::Speed(new.speed)));
+        buffer.extend_from_slice(&build_komsi_command(KomsiCommand::Odometer(123456)));
+        buffer.extend_from_slice(&build_komsi_command(KomsiCommand::Fuel(new.fuel)));
+        buffer.extend_from_slice(&build_komsi_command_eol());
+
+        // Prüfe ob der Buffer mit einem Linefeed endet
+        assert_eq!(buffer.last(), Some(&10));
+
+        // Dekodiere den Buffer und prüfe die Werte
+        // Wir müssen den Buffer parsen. KOMSI Kommandos sind ein Buchstabe gefolgt von Ziffern.
+        let mut i = 0;
+        let mut decoded_commands = Vec::new();
+        while i < buffer.len() && buffer[i] != 10 {
+            let cmd_char = buffer[i] as char;
+            i += 1;
+            let start = i;
+            while i < buffer.len()
+                && buffer[i] != 10
+                && !(buffer[i] >= b'A' && buffer[i] <= b'Z')
+                && !(buffer[i] >= b'a' && buffer[i] <= b'z')
+            {
+                i += 1;
+            }
+            let digits = &buffer[start..i];
+            let cmd = KomsiCommand::from_parts(cmd_char, digits).unwrap();
+            decoded_commands.push(cmd);
+        }
+
+        assert_eq!(decoded_commands.len(), 4);
+        assert_eq!(decoded_commands[0], KomsiCommand::Ignition(true));
+        assert_eq!(decoded_commands[1], KomsiCommand::Speed(85));
+        assert_eq!(decoded_commands[2], KomsiCommand::Odometer(123456));
+        assert_eq!(decoded_commands[3], KomsiCommand::Fuel(42));
+    }
+
+    #[test]
+    fn test_compare_logging_multiple_types() {
+        let mut old = VehicleState::new();
+        let mut new = VehicleState::new();
+
+        // 1. Boolean (ignition)
+        old.ignition = false;
+        new.ignition = true;
+
+        // 2. u8 (fuel)
+        old.fuel = 10;
+        new.fuel = 20;
+
+        // 3. u32 (speed)
+        old.speed = 0;
+        new.speed = 55;
+
         let logs = Arc::new(Mutex::new(Vec::new()));
-        let logger = TestLogger { logs: Arc::clone(&logs) };
-        
-        let _ = old.compare(&new, false, Some(&logger));
-        
-        let logs_locked = logs.lock().unwrap();
-        assert_eq!(logs_locked.len(), 1);
-        assert!(logs_locked[0].contains("ignition: 0 -> 1"));
+        let logger = TestLogger {
+            logs: Arc::clone(&logs),
+        };
+
+        let _buffer = old.compare(&new, false, Some(&logger));
+
+        let captured_logs = logs.lock().unwrap();
+
+        // Check if all expected changes are logged
+        assert!(captured_logs.iter().any(|s| s.contains("ignition: 0 -> 1")));
+        assert!(captured_logs.iter().any(|s| s.contains("fuel: 10 -> 20")));
+        assert!(captured_logs.iter().any(|s| s.contains("speed: 0 -> 55")));
     }
 }
-
