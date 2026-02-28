@@ -57,6 +57,8 @@ pub struct VehicleState {
     pub datetime: crate::komsi::KomsiDateTime,
     /// Total Distance in Meters
     pub total_distance: u64,
+    /// Total Distance in km
+    pub total_distance_km: u64,
 }
 
 impl Default for VehicleState {
@@ -91,6 +93,7 @@ impl Default for VehicleState {
                 sec: 0,
             },
             total_distance: 0,
+            total_distance_km: 0,
         }
     }
 }
@@ -335,10 +338,39 @@ impl VehicleState {
             buffer.extend_from_slice(&build_komsi_command(cmd));
         }
 
-        // IMPORTANT
-        // we do not compare total_distance and DateTime
-        // not even with force
-        // these values will only be read-manually and after a vehicle restart/change
+        // we send only the total_distance if total_distance_km is changing
+        // we do not want to send to many messages and want only to sync
+        // the meters are also increased in the client
+        if self.total_distance_km != new.total_distance_km || force {
+            if let Some(l) = logger {
+                l.log(format!(
+                    "{}: {} -> {} ",
+                    "odometer", self.door_enable as u8, new.door_enable as u8
+                ));
+            }
+            let cmd = KomsiCommand::Odometer(new.total_distance);
+            buffer.extend_from_slice(&build_komsi_command(cmd));
+        }
+
+        // we send only the datetime if the minute value is changing
+        // we do not want to send too many messages and want only to sync
+        // the time is also increased in the client
+        if self.datetime.min != new.datetime.min || force {
+            if let Some(l) = logger {
+                l.log(format!(
+                    "{}: {}:{}:{} -> {}:{}:{} ",
+                    "datetime",
+                    self.datetime.hour,
+                    self.datetime.min,
+                    self.datetime.sec,
+                    new.datetime.hour,
+                    new.datetime.min,
+                    new.datetime.sec,
+                ));
+            }
+            let cmd = KomsiCommand::DateTime(new.datetime);
+            buffer.extend_from_slice(&build_komsi_command(cmd));
+        }
 
         // TODO GearSelector, door4 if this will become a KOMSI-protocol entry sometime
 
