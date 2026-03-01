@@ -4,6 +4,7 @@ version = "1.5.1"
 edition = "2024"
 rust-version = "1.93.1"
 description = "Library for the KOMSI protocol"
+authors = ["ThatZok <af@komplix.de>"]
 license = "MIT OR Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/thatzok/komsi-lib"
