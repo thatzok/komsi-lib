@@ -1,7 +1,7 @@
-use crate::komsi::build_komsi_command_eol;
-use crate::komsi::{build_komsi_command, KomsiCommand};
+use crate::komsi::KomsiCommand;
 
 /// Trait for logging state changes.
+#[cfg(feature = "std")]
 pub trait VehicleLogger {
     /// Logs a message.
     fn log(&self, msg: String);
@@ -55,9 +55,9 @@ pub struct VehicleState {
     pub door_enable: bool,
     /// Current date and time
     pub datetime: crate::komsi::KomsiDateTime,
-    /// Total Distance in Meters
+    /// Total distance in meters.
     pub total_distance: u64,
-    /// Total Distance in km
+    /// Total distance in kilometers.
     pub total_distance_km: u64,
 }
 
@@ -105,6 +105,7 @@ impl VehicleState {
     }
 
     /// Prints the current state to the console.
+    #[cfg(feature = "std")]
     pub fn print(&self) {
         print!("ignition:{} ", self.ignition);
         print!("engine:{} ", self.engine);
@@ -134,6 +135,7 @@ impl VehicleState {
     ///
     /// If `force` is true, all fields will be included in the command buffer regardless of changes.
     /// An optional `logger` can be provided to log each change.
+    #[cfg(feature = "std")]
     pub fn compare(
         &self,
         new: &VehicleState,
@@ -150,7 +152,7 @@ impl VehicleState {
                 ));
             }
             let cmd = KomsiCommand::Ignition(new.ignition);
-            buffer.extend_from_slice(&build_komsi_command(cmd));
+            buffer.extend_from_slice(&cmd.build());
         }
 
         if self.engine != new.engine || force {
@@ -161,7 +163,7 @@ impl VehicleState {
                 ));
             }
             let cmd = KomsiCommand::Engine(new.engine);
-            buffer.extend_from_slice(&build_komsi_command(cmd));
+            buffer.extend_from_slice(&cmd.build());
         }
 
         if self.doors != new.doors || force {
@@ -172,7 +174,7 @@ impl VehicleState {
                 ));
             }
             let cmd = KomsiCommand::PassengerDoorsOpen(new.doors);
-            buffer.extend_from_slice(&build_komsi_command(cmd));
+            buffer.extend_from_slice(&cmd.build());
         }
 
         if self.fixing_brake != new.fixing_brake || force {
@@ -183,7 +185,7 @@ impl VehicleState {
                 ));
             }
             let cmd = KomsiCommand::FixingBrake(new.fixing_brake);
-            buffer.extend_from_slice(&build_komsi_command(cmd));
+            buffer.extend_from_slice(&cmd.build());
         }
 
         if self.indicator != new.indicator || force {
@@ -194,7 +196,7 @@ impl VehicleState {
                 ));
             }
             let cmd = KomsiCommand::Indicator(new.indicator);
-            buffer.extend_from_slice(&build_komsi_command(cmd));
+            buffer.extend_from_slice(&cmd.build());
         }
 
         if self.lights_warning != new.lights_warning || force {
@@ -205,7 +207,7 @@ impl VehicleState {
                 ));
             }
             let cmd = KomsiCommand::WarningLights(new.lights_warning);
-            buffer.extend_from_slice(&build_komsi_command(cmd));
+            buffer.extend_from_slice(&cmd.build());
         }
 
         if self.lights_main != new.lights_main || force {
@@ -216,7 +218,7 @@ impl VehicleState {
                 ));
             }
             let cmd = KomsiCommand::MainLights(new.lights_main);
-            buffer.extend_from_slice(&build_komsi_command(cmd));
+            buffer.extend_from_slice(&cmd.build());
         }
 
         if self.lights_stop_request != new.lights_stop_request || force {
@@ -229,7 +231,7 @@ impl VehicleState {
                 ));
             }
             let cmd = KomsiCommand::StopRequest(new.lights_stop_request);
-            buffer.extend_from_slice(&build_komsi_command(cmd));
+            buffer.extend_from_slice(&cmd.build());
         }
 
         if self.lights_stop_brake != new.lights_stop_brake || force {
@@ -240,7 +242,7 @@ impl VehicleState {
                 ));
             }
             let cmd = KomsiCommand::StopBrake(new.lights_stop_brake);
-            buffer.extend_from_slice(&build_komsi_command(cmd));
+            buffer.extend_from_slice(&cmd.build());
         }
 
         if self.lights_front_door != new.lights_front_door || force {
@@ -251,7 +253,7 @@ impl VehicleState {
                 ));
             }
             let cmd = KomsiCommand::FrontDoor(new.lights_front_door);
-            buffer.extend_from_slice(&build_komsi_command(cmd));
+            buffer.extend_from_slice(&cmd.build());
         }
 
         if self.lights_second_door != new.lights_second_door || force {
@@ -264,7 +266,7 @@ impl VehicleState {
                 ));
             }
             let cmd = KomsiCommand::SecondDoor(new.lights_second_door);
-            buffer.extend_from_slice(&build_komsi_command(cmd));
+            buffer.extend_from_slice(&cmd.build());
         }
 
         if self.lights_third_door != new.lights_third_door || force {
@@ -275,7 +277,7 @@ impl VehicleState {
                 ));
             }
             let cmd = KomsiCommand::ThirdDoor(new.lights_third_door);
-            buffer.extend_from_slice(&build_komsi_command(cmd));
+            buffer.extend_from_slice(&cmd.build());
         }
 
         if self.lights_high_beam != new.lights_high_beam || force {
@@ -286,7 +288,7 @@ impl VehicleState {
                 ));
             }
             let cmd = KomsiCommand::HighBeam(new.lights_high_beam);
-            buffer.extend_from_slice(&build_komsi_command(cmd));
+            buffer.extend_from_slice(&cmd.build());
         }
 
         if self.fuel != new.fuel || force {
@@ -294,7 +296,7 @@ impl VehicleState {
                 l.log(format!("{}: {} -> {} ", "fuel", self.fuel, new.fuel));
             }
             let cmd = KomsiCommand::Fuel(new.fuel);
-            buffer.extend_from_slice(&build_komsi_command(cmd));
+            buffer.extend_from_slice(&cmd.build());
         }
 
         if self.speed != new.speed || force {
@@ -302,7 +304,7 @@ impl VehicleState {
                 l.log(format!("{}: {} -> {} ", "speed", self.speed, new.speed));
             }
             let cmd = KomsiCommand::Speed(new.speed);
-            buffer.extend_from_slice(&build_komsi_command(cmd));
+            buffer.extend_from_slice(&cmd.build());
         }
 
         if self.maxspeed != new.maxspeed || force {
@@ -313,7 +315,7 @@ impl VehicleState {
                 ));
             }
             let cmd = KomsiCommand::MaxSpeed(new.maxspeed);
-            buffer.extend_from_slice(&build_komsi_command(cmd));
+            buffer.extend_from_slice(&cmd.build());
         }
 
         if self.battery_light != new.battery_light || force {
@@ -324,7 +326,7 @@ impl VehicleState {
                 ));
             }
             let cmd = KomsiCommand::BatteryLight(new.battery_light);
-            buffer.extend_from_slice(&build_komsi_command(cmd));
+            buffer.extend_from_slice(&cmd.build());
         }
 
         if self.door_enable != new.door_enable || force {
@@ -335,7 +337,7 @@ impl VehicleState {
                 ));
             }
             let cmd = KomsiCommand::DoorEnable(new.door_enable);
-            buffer.extend_from_slice(&build_komsi_command(cmd));
+            buffer.extend_from_slice(&cmd.build());
         }
 
         // we send only the total_distance if total_distance_km is changing
@@ -349,7 +351,7 @@ impl VehicleState {
                 ));
             }
             let cmd = KomsiCommand::Odometer(new.total_distance);
-            buffer.extend_from_slice(&build_komsi_command(cmd));
+            buffer.extend_from_slice(&cmd.build());
         }
 
         // we send only the datetime if the minute value is changing
@@ -369,14 +371,14 @@ impl VehicleState {
                 ));
             }
             let cmd = KomsiCommand::DateTime(new.datetime);
-            buffer.extend_from_slice(&build_komsi_command(cmd));
+            buffer.extend_from_slice(&cmd.build());
         }
 
         // TODO GearSelector, door4 if this will become a KOMSI-protocol entry sometime
 
         // add end of line if buffer is not empty
         if buffer.len() > 0 {
-            let mut b = build_komsi_command_eol();
+            let mut b = KomsiCommand::build_eol();
             buffer.append(&mut b);
         }
 
@@ -443,11 +445,11 @@ mod tests {
         new.fuel = 42;
 
         let mut buffer: Vec<u8> = Vec::new();
-        buffer.extend_from_slice(&build_komsi_command(KomsiCommand::Ignition(new.ignition)));
-        buffer.extend_from_slice(&build_komsi_command(KomsiCommand::Speed(new.speed)));
-        buffer.extend_from_slice(&build_komsi_command(KomsiCommand::Odometer(123456)));
-        buffer.extend_from_slice(&build_komsi_command(KomsiCommand::Fuel(new.fuel)));
-        buffer.extend_from_slice(&build_komsi_command_eol());
+        buffer.extend_from_slice(&KomsiCommand::Ignition(new.ignition).build());
+        buffer.extend_from_slice(&KomsiCommand::Speed(new.speed).build());
+        buffer.extend_from_slice(&KomsiCommand::Odometer(123456).build());
+        buffer.extend_from_slice(&KomsiCommand::Fuel(new.fuel).build());
+        buffer.extend_from_slice(&KomsiCommand::build_eol());
 
         // Prüfe ob der Buffer mit einem Linefeed endet
         assert_eq!(buffer.last(), Some(&10));
