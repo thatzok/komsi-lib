@@ -1,5 +1,6 @@
 /// Represents the different errors that can occur in the KOMSI protocol.
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum KomsiError {
     /// An invalid command character was encountered.
     InvalidCommand(char),
@@ -13,6 +14,8 @@ pub enum KomsiError {
 
 /// Represents a date and time in the KOMSI protocol.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+// Wenn das Feature "defmt" aktiv ist, füge das Format-Derive hinzu
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct KomsiDateTime {
     /// Year (e.g., 2024)
     pub year: u16,
@@ -148,6 +151,7 @@ macro_rules! define_komsi_commands {
     ($($name:ident = $char:expr => $type:ty),* $(,)?) => {
         /// Represents a KOMSI command.
         #[derive(Debug, Clone, Copy, PartialEq)]
+        #[cfg_attr(feature = "defmt", derive(defmt::Format))]
         pub enum KomsiCommand {
             $($name($type)),*
         }
