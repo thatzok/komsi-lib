@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "std"), no_std)]
 //! # KOMSI Library
 //!
 //! This crate provides a type save library for the KOMSI protocol, often used for vehicle telemetry
