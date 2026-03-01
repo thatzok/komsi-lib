@@ -13,6 +13,7 @@ simulators (e.g., "The Bus", "OMSI 2") using the [KOMSI protocol](https://github
 - **KOMSI Protocol Implementation:** Support for various [KOMSI protocol](https://github.com/thatzok/Komsi-Protocol)
   commands like Ignition, Engine, Speed, RPM, etc.
 - **Vehicle State Tracking:** Easily manage and track the state of a vehicle.
+- Can be used in std and non-std environments.
 
 ## Installation
 
@@ -26,7 +27,15 @@ Or manually add it to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-komsi = "0.5" # Replace with the latest version
+komsi = "1.5" # Replace with the latest version
+```
+
+For non-std environments:
+
+```toml
+[dependencies]
+komsi = { version = "1.5", default-features = false, features = ["defmt"] }    # no default-features because we are in no-std
+
 ```
 
 ## Usage Example

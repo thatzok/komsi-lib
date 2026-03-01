@@ -341,8 +341,8 @@ impl VehicleState {
         }
 
         // we send only the total_distance if total_distance_km is changing
-        // we do not want to send to many messages and want only to sync
-        // the meters are also increased in the client
+        // we do not want to send to many messages
+        // the meters should be counted and increased in the client
         if self.total_distance_km != new.total_distance_km || force {
             if let Some(l) = logger {
                 l.log(format!(
@@ -355,8 +355,8 @@ impl VehicleState {
         }
 
         // we send only the datetime if the minute value is changing
-        // we do not want to send too many messages and want only to sync
-        // the time is also increased in the client
+        // we do not want to send too many messages 
+        // the time should be increased in the client every second
         if self.datetime.min != new.datetime.min || force {
             if let Some(l) = logger {
                 l.log(format!(
@@ -434,7 +434,7 @@ mod tests {
         let new = VehicleState::new();
         let buffer = old.compare(&new, true, None);
         assert!(!buffer.is_empty());
-        assert_eq!(buffer.last(), Some(&10)); // Should end with EOL
+        assert_eq!(buffer.last(), Some(&10)); // Should end with Linefeed
     }
 
     #[test]
@@ -451,11 +451,10 @@ mod tests {
         buffer.extend_from_slice(&KomsiCommand::Fuel(new.fuel).build());
         buffer.extend_from_slice(&KomsiCommand::build_eol());
 
-        // Prüfe ob der Buffer mit einem Linefeed endet
+        // check if buffer ends with Linefeed
         assert_eq!(buffer.last(), Some(&10));
 
-        // Dekodiere den Buffer und prüfe die Werte
-        // Wir müssen den Buffer parsen. KOMSI Kommandos sind ein Buchstabe gefolgt von Ziffern.
+        // decode buffer an check values
         let mut i = 0;
         let mut decoded_commands = Vec::new();
         while i < buffer.len() && buffer[i] != 10 {
@@ -486,15 +485,15 @@ mod tests {
         let mut old = VehicleState::new();
         let mut new = VehicleState::new();
 
-        // 1. Boolean (ignition)
+        // Boolean (ignition)
         old.ignition = false;
         new.ignition = true;
 
-        // 2. u8 (fuel)
+        // u8 (fuel)
         old.fuel = 10;
         new.fuel = 20;
 
-        // 3. u32 (speed)
+        // u32 (speed)
         old.speed = 0;
         new.speed = 55;
 

@@ -2,7 +2,7 @@
 //! # KOMSI Library
 //!
 //! This crate provides a type save library for the KOMSI protocol, often used for vehicle telemetry
-//! in simulators like "The Bus" or "OMSI 2".
+//! in simulators like "The Bus" or "OMSI 2" and can be used in std and non-std environments.
 //!
 //! It includes structures for tracking vehicle state and functions for building and decoding KOMSI commands.
 
