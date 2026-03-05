@@ -10,7 +10,7 @@ simulators (e.g., "The Bus", "OMSI 2") using the [KOMSI protocol](https://github
 
 ## Features
 
-- **KOMSI Protocol Implementation:** Support for various [KOMSI protocol](https://github.com/thatzok/Komsi-Protocol)
+- **KOMSI Protocol Implementation:** Support for all [KOMSI protocol](https://github.com/thatzok/Komsi-Protocol)
   commands like Ignition, Engine, Speed, RPM, etc.
 - **Vehicle State Tracking:** Easily manage and track the state of a vehicle.
 - Can be used in std and non-std environments.
@@ -35,6 +35,14 @@ For non-std environments:
 ```toml
 [dependencies]
 komsi = { version = "1.5", default-features = false, features = ["defmt"] }    # no default-features because we are in no-std
+
+```
+
+For non-std environments without `defmt`:
+
+```toml
+[dependencies]
+komsi = { version = "1.5", default-features = false }    # no default-features because we are in no-std
 
 ```
 
