@@ -49,7 +49,10 @@ impl KomsiDateTime {
                 if digit > 9 {
                     return Err(KomsiError::InvalidValue);
                 }
-                n = n.checked_mul(10).and_then(|n| n.checked_add(digit as u16)).ok_or(KomsiError::InvalidValue)?;
+                n = n
+                    .checked_mul(10)
+                    .and_then(|n| n.checked_add(digit as u16))
+                    .ok_or(KomsiError::InvalidValue)?;
             }
             Ok(n)
         };
@@ -61,7 +64,10 @@ impl KomsiDateTime {
                 if digit > 9 {
                     return Err(KomsiError::InvalidValue);
                 }
-                n = n.checked_mul(10).and_then(|n| n.checked_add(digit)).ok_or(KomsiError::InvalidValue)?;
+                n = n
+                    .checked_mul(10)
+                    .and_then(|n| n.checked_add(digit))
+                    .ok_or(KomsiError::InvalidValue)?;
             }
             Ok(n)
         };
@@ -231,7 +237,10 @@ define_komsi_commands! {
     BatteryLight = b'N' => bool,
     SimulatorType = b'O' => u8,
     DoorEnable = b'P' => bool,
+    DebugMode = b'd' => u32,
+    InfoRequest = b'i' => bool,
     Odometer = b'o' => u64,
+    ProtocolSwitch = b'p' => u8,
     DateTime = b'r' => KomsiDateTime,
     MaxSpeed = b's' => u32,
     RPM = b't' => u32,
@@ -325,8 +334,6 @@ fn write_fixed_u16(n: u16, buf: &mut [u8]) {
         write_fixed_u8((n % 100) as u8, &mut buf[2..4]);
     }
 }
-
-
 
 #[cfg(test)]
 mod tests {
