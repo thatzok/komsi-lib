@@ -51,8 +51,8 @@ pub struct VehicleState {
     pub battery_light: bool,
     /// Gear selector position
     pub gear_selector: u8,
-    /// Door enable status
-    pub door_enable: bool,
+    /// Door clearance status
+    pub door_clearance: bool,
     /// Current date and time
     pub datetime: crate::komsi::KomsiDateTime,
     /// Total distance in meters.
@@ -82,7 +82,7 @@ impl Default for VehicleState {
             fuel: 0,
             lights_stop_brake: false,
             battery_light: false,
-            door_enable: false,
+            door_clearance: false,
             gear_selector: 0,
             datetime: crate::komsi::KomsiDateTime {
                 year: 2000,
@@ -125,7 +125,7 @@ impl VehicleState {
         print!("speed:{} ", self.speed);
         print!("max-speed:{} ", self.maxspeed);
         print!("battery-light:{} ", self.battery_light);
-        print!("door-enable:{} ", self.door_enable);
+        print!("door-clearance:{} ", self.door_clearance);
         print!("gear-selector:{} ", self.gear_selector);
         print!("datetime:{:?} ", self.datetime);
         println!(" ");
@@ -329,14 +329,14 @@ impl VehicleState {
             buffer.extend_from_slice(&cmd.build());
         }
 
-        if self.door_enable != new.door_enable || force {
+        if self.door_clearance != new.door_clearance || force {
             if let Some(l) = logger {
                 l.log(format!(
                     "{}: {} -> {} ",
-                    "door_enable", self.door_enable as u8, new.door_enable as u8
+                    "door_enable", self.door_clearance as u8, new.door_clearance as u8
                 ));
             }
-            let cmd = KomsiCommand::DoorEnable(new.door_enable);
+            let cmd = KomsiCommand::DoorClearance(new.door_clearance);
             buffer.extend_from_slice(&cmd.build());
         }
 
@@ -347,7 +347,7 @@ impl VehicleState {
             if let Some(l) = logger {
                 l.log(format!(
                     "{}: {} -> {} ",
-                    "odometer", self.door_enable as u8, new.door_enable as u8
+                    "odometer", self.total_distance_km as u8, new.total_distance_km as u8
                 ));
             }
             let cmd = KomsiCommand::Odometer(new.total_distance);

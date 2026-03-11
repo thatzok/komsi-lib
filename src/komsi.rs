@@ -247,7 +247,7 @@ define_komsi_commands! {
     HighBeam = b'M' => bool,
     BatteryLight = b'N' => bool,
     SimulatorType = b'O' => u8,
-    DoorEnable = b'P' => bool,
+    DoorClearance = b'P' => bool,
     DebugMode = b'd' => u32,
     InfoRequest = b'i' => bool,
     Odometer = b'o' => u64,
