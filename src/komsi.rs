@@ -215,6 +215,17 @@ macro_rules! define_komsi_commands {
                 buffer
             }
         }
+
+        impl core::str::FromStr for KomsiCommand {
+            type Err = KomsiError;
+
+            fn from_str(s: &str) -> Result<Self, Self::Err> {
+                let mut chars = s.chars();
+                let cmd_char = chars.next().ok_or(KomsiError::UnknownCommand)?;
+                let digits = chars.as_str().as_bytes();
+                Self::from_parts(cmd_char, digits)
+            }
+        }
     };
 }
 
@@ -338,6 +349,18 @@ fn write_fixed_u16(n: u16, buf: &mut [u8]) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_from_str() {
+        let cmd: KomsiCommand = "y120".parse().unwrap();
+        assert_eq!(cmd, KomsiCommand::Speed(120));
+
+        let cmd: KomsiCommand = "A1".parse().unwrap();
+        assert_eq!(cmd, KomsiCommand::Ignition(true));
+
+        let cmd: KomsiCommand = "o123456".parse().unwrap();
+        assert_eq!(cmd, KomsiCommand::Odometer(123456));
+    }
 
     #[test]
     fn test_bool_roundtrip() {
