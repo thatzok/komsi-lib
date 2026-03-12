@@ -333,7 +333,7 @@ impl VehicleState {
             if let Some(l) = logger {
                 l.log(format!(
                     "{}: {} -> {} ",
-                    "door_enable", self.door_clearance as u8, new.door_clearance as u8
+                    "door_clearance", self.door_clearance as u8, new.door_clearance as u8
                 ));
             }
             let cmd = KomsiCommand::DoorClearance(new.door_clearance);
